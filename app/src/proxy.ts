@@ -33,7 +33,7 @@ export async function proxy(request: NextRequest) {
     error,
   } = await supabase.auth.getUser();
 
-  if (error) {
+  if (error && error.name !== "AuthSessionMissingError") {
     throw new Error("Impossible de vérifier la session Supabase.", {
       cause: error,
     });
