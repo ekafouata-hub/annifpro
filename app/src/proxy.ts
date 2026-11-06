@@ -39,7 +39,9 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  if (!user && request.nextUrl.pathname !== "/login") {
+  const publicPaths = ["/login", "/forgot-password", "/reset-password"];
+
+  if (!user && !publicPaths.includes(request.nextUrl.pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);

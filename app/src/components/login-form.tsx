@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -102,6 +103,12 @@ export default function LoginForm() {
       >
         {isSubmitting ? "Connexion..." : "Se connecter"}
       </button>
+      <Link
+        href="/forgot-password"
+        className="block text-center text-sm text-sky-300 transition hover:text-cyan-200"
+      >
+        Mot de passe oublié ?
+      </Link>
     </form>
   );
 }
