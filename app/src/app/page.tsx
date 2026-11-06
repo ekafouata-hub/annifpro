@@ -1,21 +1,50 @@
 import Link from "next/link";
 import LogoutButton from "@/components/logout-button";
-import {
-  dashboardTemplates,
-  mockMembers,
-  reminderHighlights,
-} from "@/lib/mock-data";
-import { getCurrentProfile } from "@/lib/supabase/server";
+import { dashboardTemplates, type Member } from "@/lib/mock-data";
+import { createClient, getCurrentProfile } from "@/lib/supabase/server";
 
-const stats = [
-  {
-    label: "Aujourd'hui",
-    value: String(mockMembers.filter((member) => member.birth_date || member.marriage_date).length),
-    detail: "anniversaires suivis",
-  },
-  { label: "Demain", value: "02", detail: "rappels à préparer" },
-  { label: "Cette semaine", value: "06", detail: "personnes concernées" },
-];
+type UpcomingOccasion = {
+  id: string;
+  memberId: string;
+  memberName: string;
+  type: "Naissance" | "Mariage";
+  nextDate: Date;
+  daysUntil: number;
+};
+
+function getUpcomingOccasions(members: Member[], now = new Date()) {
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const occasions: UpcomingOccasion[] = [];
+
+  for (const member of members) {
+    for (const [type, dateValue] of [
+      ["Naissance", member.birth_date],
+      ["Mariage", member.marriage_date],
+    ] as const) {
+      if (!dateValue) continue;
+
+      const [, month, day] = dateValue.split("-").map(Number);
+      if (!month || !day) continue;
+
+      let nextDate = new Date(now.getFullYear(), month - 1, day);
+      if (nextDate.getTime() < new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) {
+        nextDate = new Date(now.getFullYear() + 1, month - 1, day);
+      }
+
+      const nextDateUtc = Date.UTC(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+      occasions.push({
+        id: `${member.id}-${type}`,
+        memberId: member.id,
+        memberName: member.full_name,
+        type,
+        nextDate,
+        daysUntil: Math.round((nextDateUtc - todayUtc) / 86_400_000),
+      });
+    }
+  }
+
+  return occasions.sort((left, right) => left.daysUntil - right.daysUntil);
+}
 
 export default async function Home() {
   const profileResult = await getCurrentProfile();
@@ -24,6 +53,38 @@ export default async function Home() {
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Utilisateur";
   const roleLabel =
     profile?.role === "super_admin" ? "Super administrateur" : "Responsable du bureau";
+  let members: Member[] = [];
+  let membersLoadError = false;
+
+  if (user) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, full_name, phone, category, birth_date, marriage_date, is_active, photo_profile")
+      .eq("is_active", true);
+
+    members = (data ?? []) as Member[];
+    membersLoadError = Boolean(error);
+  }
+
+  const upcomingOccasions = getUpcomingOccasions(members);
+  const stats = [
+    {
+      label: "Aujourd'hui",
+      value: String(upcomingOccasions.filter((item) => item.daysUntil === 0).length),
+      detail: "anniversaires",
+    },
+    {
+      label: "Demain",
+      value: String(upcomingOccasions.filter((item) => item.daysUntil === 1).length),
+      detail: "rappels à préparer",
+    },
+    {
+      label: "Cette semaine",
+      value: String(new Set(upcomingOccasions.filter((item) => item.daysUntil <= 7).map((item) => item.memberId)).size),
+      detail: "personnes concernées",
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
@@ -118,9 +179,17 @@ export default async function Home() {
             </div>
 
             <div className="space-y-4">
-              {reminderHighlights.map((item) => (
+              {membersLoadError ? (
+                <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+                  Impossible de charger les anniversaires depuis Supabase.
+                </p>
+              ) : upcomingOccasions.length === 0 ? (
+                <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-sm text-slate-400">
+                  Aucun anniversaire à venir. Ajoutez les dates des membres pour alimenter ce tableau.
+                </p>
+              ) : upcomingOccasions.slice(0, 3).map((item) => (
                 <div
-                  key={item.name}
+                  key={item.id}
                   className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-4 md:flex-row md:items-center md:justify-between"
                 >
                   <div>
@@ -128,19 +197,27 @@ export default async function Home() {
                       <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-300">
                         {item.type}
                       </span>
-                      <span className="text-xs text-slate-400">{item.stage}</span>
+                      <span className="text-xs text-slate-400">
+                        {item.daysUntil === 0 ? "Aujourd’hui" : `Dans ${item.daysUntil} jour${item.daysUntil === 1 ? "" : "s"}`}
+                      </span>
                     </div>
-                    <h4 className="text-lg font-semibold text-white">{item.name}</h4>
-                    <p className="mt-1 text-sm text-slate-400">{item.date}</p>
+                    <h4 className="text-lg font-semibold text-white">{item.memberName}</h4>
+                    <p className="mt-1 text-sm capitalize text-slate-400">
+                      {new Intl.DateTimeFormat("fr-FR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                      }).format(item.nextDate)}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                      {item.status}
+                      À préparer
                     </span>
-                    <button className="rounded-lg bg-sky-400 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-300">
+                    <Link href="/members" className="rounded-lg bg-sky-400 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-300">
                       Ouvrir
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))}
