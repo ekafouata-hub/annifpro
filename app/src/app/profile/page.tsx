@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { updateProfile } from "@/app/actions/profile";
 import { getCurrentProfile } from "@/lib/supabase/server";
+import ThemeToggle from "@/components/theme-toggle";
 
 export default async function ProfilePage() {
   const profileResult = await getCurrentProfile();
@@ -23,12 +24,15 @@ export default async function ProfilePage() {
             <h1 className="mt-2 text-2xl font-black text-white">Mon compte</h1>
           </div>
 
-          <Link
-            href="/"
-            className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:border-sky-400 hover:text-sky-300"
-          >
-            Tableau de bord
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/"
+              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:border-sky-400 hover:text-sky-300"
+            >
+              Tableau de bord
+            </Link>
+          </div>
         </header>
 
         <section className="rounded-[28px] border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/25">

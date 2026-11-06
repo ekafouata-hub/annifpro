@@ -38,6 +38,8 @@ function readMemberForm(formData: FormData) {
   const category = String(formData.get("category") ?? "");
   const birth_date = String(formData.get("birth_date") ?? "") || null;
   const marriage_date = String(formData.get("marriage_date") ?? "") || null;
+  const photo_profile = String(formData.get("photo_profile") ?? "").trim() || null;
+  const photo_couple = String(formData.get("photo_couple") ?? "").trim() || null;
 
   if (!full_name || !phone) {
     throw new Error("Le nom et le téléphone sont obligatoires.");
@@ -51,7 +53,20 @@ function readMemberForm(formData: FormData) {
     throw new Error("Choisissez une catégorie valide.");
   }
 
-  return { full_name, phone, category, birth_date, marriage_date };
+  for (const photoUrl of [photo_profile, photo_couple]) {
+    if (!photoUrl) continue;
+
+    try {
+      const parsedUrl = new URL(photoUrl);
+      if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+        throw new Error();
+      }
+    } catch {
+      throw new Error("Les photos doivent utiliser une URL HTTP ou HTTPS valide.");
+    }
+  }
+
+  return { full_name, phone, category, birth_date, marriage_date, photo_profile, photo_couple };
 }
 
 export async function saveMember(
@@ -103,4 +118,22 @@ export async function setMemberActive(formData: FormData) {
   }
 
   revalidatePath("/members");
+}
+
+export async function deleteMember(formData: FormData) {
+  const memberId = String(formData.get("member_id") ?? "");
+
+  if (!memberId) {
+    throw new Error("Membre introuvable.");
+  }
+
+  const supabase = await getAdminClient();
+  const { error } = await supabase.from("members").delete().eq("id", memberId);
+
+  if (error) {
+    throw new Error("Impossible de supprimer ce membre.");
+  }
+
+  revalidatePath("/members");
+  revalidatePath("/");
 }

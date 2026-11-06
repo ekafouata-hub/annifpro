@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import ThemeToggle from "@/components/theme-toggle";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -51,6 +52,9 @@ export default function ResetPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <section className="w-full max-w-md rounded-[28px] border border-sky-400/20 bg-slate-900/90 p-8 shadow-2xl shadow-sky-950/30">
+        <div className="mb-5 flex justify-end">
+          <ThemeToggle />
+        </div>
         <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-sky-300/80">
           Sécurité du compte
         </p>

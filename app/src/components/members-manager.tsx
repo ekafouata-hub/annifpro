@@ -2,8 +2,9 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { saveMember, setMemberActive, type MemberActionState } from "@/app/actions/members";
+import { deleteMember, saveMember, setMemberActive, type MemberActionState } from "@/app/actions/members";
 import { formatDateFr, type Member } from "@/lib/mock-data";
+import ThemeToggle from "@/components/theme-toggle";
 
 type MembersManagerProps = {
   members: Member[];
@@ -47,6 +48,7 @@ export default function MembersManager({ members, canManage, loadError }: Member
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/"
               className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:border-sky-400 hover:text-sky-300"
@@ -155,6 +157,19 @@ export default function MembersManager({ members, canManage, loadError }: Member
                               <input type="hidden" name="is_active" value={String(!member.is_active)} />
                               <button type="submit" className="text-slate-400 hover:text-white">
                                 {member.is_active ? "Désactiver" : "Réactiver"}
+                              </button>
+                            </form>
+                            <form
+                              action={deleteMember}
+                              onSubmit={(event) => {
+                                if (!window.confirm(`Supprimer définitivement ${member.full_name} ?`)) {
+                                  event.preventDefault();
+                                }
+                              }}
+                            >
+                              <input type="hidden" name="member_id" value={member.id} />
+                              <button type="submit" className="text-rose-300 hover:text-rose-200">
+                                Supprimer
                               </button>
                             </form>
                           </div>
@@ -272,6 +287,26 @@ function MemberForm({ member, onClose }: { member: Member | null; onClose: () =>
               name="marriage_date"
               type="date"
               defaultValue={member?.marriage_date ?? ""}
+              className="mt-1.5 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-sky-400"
+            />
+          </label>
+          <label className="text-sm text-slate-300">
+            URL photo individuelle
+            <input
+              name="photo_profile"
+              type="url"
+              defaultValue={member?.photo_profile ?? ""}
+              placeholder="https://..."
+              className="mt-1.5 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-sky-400"
+            />
+          </label>
+          <label className="text-sm text-slate-300">
+            URL photo du couple
+            <input
+              name="photo_couple"
+              type="url"
+              defaultValue={member?.photo_couple ?? ""}
+              placeholder="https://..."
               className="mt-1.5 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-white outline-none focus:border-sky-400"
             />
           </label>

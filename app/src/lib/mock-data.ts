@@ -7,6 +7,7 @@ export type Member = {
   marriage_date: string | null;
   is_active: boolean;
   photo_profile: string | null;
+  photo_couple: string | null;
 };
 
 export const mockMembers: Member[] = [
@@ -19,6 +20,7 @@ export const mockMembers: Member[] = [
     marriage_date: "1999-11-09",
     is_active: true,
     photo_profile: null,
+    photo_couple: null,
   },
   {
     id: "m-02",
@@ -29,6 +31,7 @@ export const mockMembers: Member[] = [
     marriage_date: null,
     is_active: true,
     photo_profile: null,
+    photo_couple: null,
   },
   {
     id: "m-03",
@@ -39,6 +42,7 @@ export const mockMembers: Member[] = [
     marriage_date: null,
     is_active: true,
     photo_profile: null,
+    photo_couple: null,
   },
   {
     id: "m-04",
@@ -49,6 +53,7 @@ export const mockMembers: Member[] = [
     marriage_date: null,
     is_active: true,
     photo_profile: null,
+    photo_couple: null,
   },
   {
     id: "m-05",
@@ -59,6 +64,7 @@ export const mockMembers: Member[] = [
     marriage_date: "2001-12-18",
     is_active: true,
     photo_profile: null,
+    photo_couple: null,
   },
 ];
 
